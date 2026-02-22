@@ -4,10 +4,37 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { open } from '@tauri-apps/plugin-dialog';
+import { invoke } from '@tauri-apps/api/core';
 
 function App() {
   // Cet état (state) va gérer quel moteur on utilise
   const [isLocalMode, setIsLocalMode] = useState(false);
+
+  const handleFileSelect = async () => {
+    try {
+      // 1. Ouvre la fenêtre de sélection de fichiers native du Mac
+      const selected = await open({
+        multiple: false,
+        filters: [{
+          name: 'Audio',
+          extensions: ['mp3', 'wav', 'm4a']
+        }]
+      });
+
+      if (selected) {
+        console.log("Chemin du fichier sélectionné :", selected);
+
+        // 2. On envoie ce chemin à notre backend Rust
+        const rustResponse = await invoke('process_audio', { filePath: selected });
+
+        // 3. On affiche la réponse de Rust
+        alert(rustResponse);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la sélection :", error);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 p-8 flex flex-col items-center font-sans text-slate-900">
@@ -53,7 +80,7 @@ function App() {
             MP3, WAV, M4A supportés
           </p>
 
-          <Button size="lg" className="shadow-md">
+          <Button size="lg" className="shadow-md" onClick={handleFileSelect}>
             Parcourir les fichiers
           </Button>
 
